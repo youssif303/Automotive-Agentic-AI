@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBrain Lite — AI Vehicle Assistant</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Sidebar: Manual Selector & Uploader -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🚗</span>
+                    <span class="logo-text">AutoBrain <span class="accent-text">Lite</span></span>
+                </div>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Ingested Manuals Section -->
+                <div class="section-title">Select Manual</div>
+                <div class="manual-list" id="manualList">
+                    <div class="loading-spinner">Loading indices...</div>
+                </div>
+                
+                <!-- Upload Section -->
+                <div class="section-title">Upload Manual (PDF)</div>
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Drag & drop or click to upload</div>
+                    
+                    <!-- Progress bar (hidden by default) -->
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar" id="progressBar"></div>
+                        <div class="progress-status" id="progressStatus">Uploading...</div>
+                    </div>
+                </div>
+                <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;">
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="status-badge connected" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-label">Offline</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Chat Area -->
+        <main class="chat-area">
+            <!-- Chat Header -->
+            <header class="chat-header">
+                <div class="header-info">
+                    <h1 id="activeManualTitle">No manual selected</h1>
+                    <p class="subtitle" id="activeManualSubtitle">Local On-Premise AI RAG Assistant</p>
+                </div>
+            </header>
+            
+            <!-- Chat Logs -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="message system">
+                    <div class="message-bubble">
+                        Welcome to AutoBrain! Select a manual from the sidebar or upload a new one to begin asking questions. All processing runs 100% locally.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Follow-up Suggestions Container -->
+            <div class="suggestions-container" id="suggestionsContainer"></div>
+            
+            <!-- Input Area -->
+            <footer class="chat-input-area">
+                <form id="chatForm" class="input-wrapper">
+                    <input type="text" id="userInput" placeholder="Ask a question about your car..." autocomplete="off" disabled>
+                    <button type="submit" id="sendBtn" class="send-button" disabled>
+                        <svg viewBox="0 0 24 24" width="20" height="20" class="send-icon">
+                            <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </form>
+            </footer>
+        </main>
+        
+        <!-- Inspector Panel (Slide-out for citations) -->
+        <div class="inspector-panel" id="inspectorPanel">
+            <div class="inspector-header">
+                <h3>Manual Citations Excerpt</h3>
+                <button class="close-btn" id="closeInspectorBtn">&times;</button>
+            </div>
+            <div class="inspector-content" id="inspectorContent">
+                Select a reference page number to view the extracted manual text.
+            </div>
+        </div>
+        
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

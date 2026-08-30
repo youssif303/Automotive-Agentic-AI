@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Car App Library theme attributes are defined here.
+         The host uses these to style the templates. -->
+    <style name="AutoBrainCarAppTheme">
+        <item name="carColorPrimary">#000000</item>
+        <item name="carColorPrimaryDark">#000000</item>
+        <item name="carColorSecondary">#FFFFFF</item>
+        <item name="carColorSecondaryDark">#FFFFFF</item>
+    </style>
+</resources>

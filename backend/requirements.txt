@@ -1,0 +1,18 @@
+# PDF parsing
+pymupdf>=1.24.0
+
+# Embeddings & vector search
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0
+
+# LLM inference (llama.cpp Python bindings)
+llama-cpp-python>=0.2.80
+
+# Web server (Day 3)
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+websockets>=12.0
+python-multipart>=0.0.9
+
+# CLI tools
+click>=8.1.0
