@@ -20,7 +20,18 @@ import click
 import fitz  # pymupdf
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
+# Prefer FastEmbed (ONNX, ~35 MB RAM) over sentence-transformers (~450 MB with PyTorch).
+try:
+    from fastembed import TextEmbedding as FastTextEmbedding
+    HAS_FASTEMBED = True
+except ImportError:
+    HAS_FASTEMBED = False
+
+try:
+    from sentence_transformers import SentenceTransformer
+    HAS_SENTENCE_TRANSFORMERS = True
+except ImportError:
+    HAS_SENTENCE_TRANSFORMERS = False
 
 
 # ---------------------------------------------------------------------------
@@ -120,17 +131,31 @@ def build_index(
     Returns: (faiss_index, embeddings_array)
     """
     click.echo(f"  [INFO] Loading embedding model '{model_name}'...")
-    model = SentenceTransformer(model_name)
 
     click.echo(f"  [INFO] Embedding {len(chunks)} chunks...")
     texts = [c["text"] for c in chunks]
-    embeddings = model.encode(
-        texts,
-        show_progress_bar=True,
-        normalize_embeddings=True,  # normalize so IP = cosine similarity
-        batch_size=32,
-    )
-    embeddings = np.array(embeddings, dtype=np.float32)
+
+    if HAS_FASTEMBED:
+        # FastEmbed: ONNX runtime, ~35 MB RAM, no PyTorch required
+        fe_model = FastTextEmbedding(f"sentence-transformers/{model_name}")
+        embeddings = np.array(list(fe_model.embed(texts)), dtype=np.float32)
+        # Normalize to unit vectors (cosine similarity via inner product)
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        embeddings = embeddings / np.maximum(norms, 1e-10)
+    elif HAS_SENTENCE_TRANSFORMERS:
+        model = SentenceTransformer(model_name)
+        embeddings = model.encode(
+            texts,
+            show_progress_bar=True,
+            normalize_embeddings=True,
+            batch_size=32,
+        )
+        embeddings = np.array(embeddings, dtype=np.float32)
+    else:
+        raise RuntimeError(
+            "No embedding backend available. Install fastembed or sentence-transformers."
+        )
+
 
     # Build FAISS index (FlatIP = brute-force inner product, exact results)
     dimension = embeddings.shape[1]  # 384 for MiniLM
