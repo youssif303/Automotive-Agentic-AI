@@ -106,6 +106,12 @@ def startup_event():
         print("Note: Agent will attempt to lazy-load once a database/model is ready.")
 
 
+@app.get("/api/health")
+def health_check():
+    """Health check endpoint for Render monitoring."""
+    return {"status": "ok", "mode": agent.mode if agent else "initializing"}
+
+
 @app.get("/api/indices")
 def list_indices():
     """List all available vehicle manuals that have been ingested."""

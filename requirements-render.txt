@@ -1,4 +1,7 @@
-# Lightweight dependencies for Render free tier deployment (< 200MB RAM)
+# Tell pip to fetch CPU-only PyTorch wheels (avoids downloading 2.5GB of NVIDIA CUDA libraries)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+
 # PDF parsing
 pymupdf>=1.24.0
 
