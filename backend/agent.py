@@ -85,7 +85,7 @@ class AutoBrainAgent:
         print(f"  [OK] Agent initialized successfully (Mode: {self.mode}).")
 
     def _call_llm(self, prompt: str, max_tokens: int = 300, temperature: float = 0.2, stop: list = None) -> str:
-        """Unified caller for either local llama.cpp or Cloud API fallback."""
+        """Unified caller for local llama.cpp or multi-provider Cloud API (Groq, Gemini, HuggingFace, OpenAI)."""
         if self.mode == "local" and self.llm is not None:
             response = self.llm(
                 prompt,
@@ -95,32 +95,73 @@ class AutoBrainAgent:
             )
             return response["choices"][0]["text"].strip()
 
-        # Cloud API Fallback (Groq free tier or OpenAI-compatible)
-        api_key = self.cloud_api_key or os.getenv("GROQ_API_KEY")
-        if not api_key:
-            return "AutoBrain Demo: Server is running in cloud mode. Please set GROQ_API_KEY in Render environment variables for full responses."
+        # Cloud API Fallback
+        api_key = (
+            os.getenv("GROQ_API_KEY")
+            or os.getenv("GEMINI_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or os.getenv("HF_TOKEN")
+            or ""
+        ).strip()
 
+        if not api_key:
+            return "AutoBrain Demo: Please configure GROQ_API_KEY or GEMINI_API_KEY in Render environment variables."
+
+        # Provider 1: Google Gemini (key starts with AIzaSy)
+        if api_key.startswith("AIzaSy") or os.getenv("GEMINI_API_KEY"):
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                payload = {
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "maxOutputTokens": max_tokens,
+                        "temperature": temperature
+                    }
+                }
+                req = urllib.request.Request(
+                    url,
+                    headers={"Content-Type": "application/json"},
+                    data=json.dumps(payload).encode("utf-8")
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    res_data = json.loads(resp.read().decode("utf-8"))
+                    return res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8")
+                print(f"  [Gemini API Error] {e.code}: {err_body}")
+                return f"[Gemini Error {e.code}: {err_body[:100]}]"
+            except Exception as e:
+                print(f"  [Gemini API Exception] {str(e)}")
+                return f"[Gemini Exception: {str(e)}]"
+
+        # Provider 2: Groq (high-speed free tier, key starts with gsk_)
         try:
-            # Call Groq's high-speed free API (Llama-3.1-8b)
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            payload = {
+                "model": "llama-3.1-8b-instant",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+                "temperature": temperature
+            }
             req = urllib.request.Request(
-                "https://api.groq.com/openai/v1/chat/completions",
+                url,
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
-                    "User-Agent": "AutoBrain/1.0"
+                    "User-Agent": "Mozilla/5.0 AutoBrain"
                 },
-                data=json.dumps({
-                    "model": "llama-3.1-8b-instant",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": max_tokens,
-                    "temperature": temperature
-                }).encode("utf-8")
+                data=json.dumps(payload).encode("utf-8")
             )
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                return data["choices"][0]["message"]["content"].strip()
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                res_data = json.loads(resp.read().decode("utf-8"))
+                return res_data["choices"][0]["message"]["content"].strip()
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8")
+            print(f"  [Groq API Error] {e.code}: {err_body}")
+            return f"[Cloud LLM Error {e.code}: {err_body[:100]}]"
         except Exception as e:
-            return f"[Cloud LLM Error: {str(e)}]"
+            print(f"  [Cloud LLM Exception] {str(e)}")
+            return f"[Cloud LLM Exception: {str(e)}]"
 
     def _classify_intent(self, query: str) -> bool:
         """
