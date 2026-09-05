@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -28,6 +29,15 @@ from backend.query import Retriever
 from backend.ingest import extract_text_from_pdf, chunk_text, build_index, save_index
 
 app = FastAPI(title="AutoBrain Lite API")
+
+# Enable CORS for external frontend deployments (Vercel, local emulator, etc.)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Shared state
 agent = None
@@ -222,15 +232,39 @@ async def websocket_endpoint(websocket: WebSocket):
         print("[WebSocket] Client disconnected")
 
 
+class ChatQueryRequest(BaseModel):
+    query: str
+
+
+@app.post("/api/chat")
+async def chat_endpoint(req: ChatQueryRequest):
+    """REST endpoint for clients that prefer HTTP over WebSocket."""
+    global agent
+    if agent is None:
+        raise HTTPException(status_code=503, detail="Agent not ready yet.")
+    
+    result = await run_in_threadpool(agent.answer_query, req.query)
+    return {
+        "answer": result["answer"],
+        "retrieved": [
+            {"text": c["text"], "page": c["page"]}
+            for c in result["retrieved"]
+        ],
+        "follow_ups": result["follow_ups"]
+    }
+
+
 # ---------------------------------------------------------------------------
 # Serve Web UI
 # ---------------------------------------------------------------------------
 
-# Mount frontend files
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+# Mount frontend files (if frontend directory exists)
+if os.path.exists("frontend"):
+    app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
 
 if __name__ == "__main__":
     import uvicorn
-    # Start on all interfaces to allow emulator connections
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    # Start on all interfaces to allow emulator/cloud connections
+    uvicorn.run(app, host="0.0.0.0", port=port)

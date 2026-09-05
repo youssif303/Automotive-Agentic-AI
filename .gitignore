@@ -11,9 +11,9 @@ venv/
 .venv/
 env/
 
-# Large files — models and data
+# Large files — models and temp uploads
 models/
-data/
+data/temp/
 
 # IDE
 .idea/

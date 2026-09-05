@@ -41,18 +41,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ---------------------------------------------------------------------------
+    // Backend Host Configuration (Local vs Render Cloud)
+    // ---------------------------------------------------------------------------
+    const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    // Check URL param (?backend=https://...) or localStorage or default Render URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const customBackend = urlParams.get("backend");
+    if (customBackend) {
+        localStorage.setItem("autobrain_backend", customBackend);
+    }
+    const RENDER_BACKEND_URL = "https://automotive-agentic-ai.onrender.com";
+    const API_BASE = isLocalhost ? "" : (localStorage.getItem("autobrain_backend") || RENDER_BACKEND_URL).replace(/\/$/, "");
+
+    // ---------------------------------------------------------------------------
     // WebSockets Setup
     // ---------------------------------------------------------------------------
     function connectWebSocket() {
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const host = window.location.host;
-        const wsUrl = `${protocol}//${host}/ws`;
+        let wsUrl;
+        if (isLocalhost) {
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            wsUrl = `${protocol}//${window.location.host}/ws`;
+        } else {
+            const cleanHost = API_BASE.replace(/^https?:\/\//, "");
+            const wsProto = API_BASE.startsWith("https") ? "wss:" : "ws:";
+            wsUrl = `${wsProto}//${cleanHost}/ws`;
+        }
 
         updateStatus("connecting");
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
-            console.log("WebSocket connected");
+            console.log("WebSocket connected to:", wsUrl);
             updateStatus("connected");
             if (selectedIndex) {
                 enableChatInput(true);
@@ -130,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ---------------------------------------------------------------------------
     async function loadIndices() {
         try {
-            const res = await fetch("/api/indices");
+            const res = await fetch(`${API_BASE}/api/indices`);
             const data = await res.json();
             
             manualList.innerHTML = "";
@@ -149,9 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     item.classList.add("active");
                     selectedIndex = index;
                     activeManualTitle.textContent = formatIndexName(index);
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        enableChatInput(true);
-                    }
+                    enableChatInput(true);
                 }
                 item.innerHTML = `
                     <span>${formatIndexName(index)}</span>
@@ -169,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function selectIndex(indexName) {
         try {
-            const res = await fetch("/api/select-index", {
+            const res = await fetch(`${API_BASE}/api/select-index`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ index_name: indexName })
@@ -289,27 +306,46 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ---------------------------------------------------------------------------
-    // Input Submissions
+    // Input Submissions (WebSocket + HTTP Fallback)
     // ---------------------------------------------------------------------------
-    chatForm.addEventListener("submit", (e) => {
+    chatForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const text = userInput.value.trim();
-        if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+        if (!text) return;
 
         // Clear suggestions chips
         suggestionsContainer.innerHTML = "";
 
         // Append user query bubble
         appendMessage("user", text);
-        
-        // Send to WebSocket
-        ws.send(text);
-        
-        // Clear input field
         userInput.value = "";
-        
-        // Append thinking indicator bubble
         appendLoadingBubble();
+
+        // If WebSocket is connected, use it
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(text);
+        } else {
+            // HTTP Fallback (for Vercel or when WebSockets are blocked)
+            try {
+                const res = await fetch(`${API_BASE}/api/chat`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query: text })
+                });
+                const data = await res.json();
+                removeLoadingBubble();
+                if (data.answer) {
+                    retrievedExcerpts = data.retrieved || [];
+                    appendMessage("assistant", data.answer, data.retrieved);
+                    renderSuggestions(data.follow_ups);
+                } else {
+                    appendMessage("assistant", "Sorry, could not process query.");
+                }
+            } catch (err) {
+                removeLoadingBubble();
+                appendMessage("assistant", `Connection error: ${err.message}. Please check that the Render backend is active.`);
+            }
+        }
     });
 
     // ---------------------------------------------------------------------------
@@ -364,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             // Upload file
-            const res = await fetch("/api/upload", {
+            const res = await fetch(`${API_BASE}/api/upload`, {
                 method: "POST",
                 body: formData
             });
@@ -376,7 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 // Poll indices list every 5 seconds until the new index name shows up
                 const pollInterval = setInterval(async () => {
-                    const checkRes = await fetch("/api/indices");
+                    const checkRes = await fetch(`${API_BASE}/api/indices`);
                     const checkData = await checkRes.json();
                     
                     if (checkData.indices.includes(data.index_name)) {
