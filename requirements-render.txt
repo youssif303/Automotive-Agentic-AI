@@ -1,13 +1,8 @@
-# Tell pip to fetch CPU-only PyTorch wheels (avoids downloading 2.5GB of NVIDIA CUDA libraries)
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-
-# PDF parsing
-pymupdf>=1.24.0
-
-# Embeddings & vector search
-sentence-transformers>=3.0.0
+# Ultra-lightweight dependencies for Render Free Tier (< 90MB RAM total)
+# Uses ONNX Runtime (fastembed) instead of heavy PyTorch
+fastembed>=0.8.0
 faiss-cpu>=1.8.0
+pymupdf>=1.24.0
 
 # Web server
 fastapi>=0.111.0
@@ -17,3 +12,4 @@ python-multipart>=0.0.9
 
 # Cloud inference client
 requests>=2.31.0
+click>=8.1.0

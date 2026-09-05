@@ -15,7 +15,19 @@ import os
 import click
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
+
+# Try importing FastEmbed (ONNX runtime, uses ~35MB RAM, ideal for cloud)
+try:
+    from fastembed import TextEmbedding
+    HAS_FASTEMBED = True
+except ImportError:
+    HAS_FASTEMBED = False
+
+try:
+    from sentence_transformers import SentenceTransformer
+    HAS_SENTENCE_TRANSFORMERS = True
+except ImportError:
+    HAS_SENTENCE_TRANSFORMERS = False
 
 
 class Retriever:
@@ -45,8 +57,17 @@ class Retriever:
         with open(meta_path, "r", encoding="utf-8") as f:
             self.chunks = json.load(f)
 
-        # Load embedding model (same one used during ingestion!)
-        self.model = SentenceTransformer(model_name)
+        # Load lightweight embedding model (FastEmbed preferred for cloud, SentenceTransformer fallback)
+        if HAS_FASTEMBED:
+            print("  [INFO] Using FastEmbed (ultra-low memory ONNX Runtime)")
+            self.fast_model = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+            self.model = None
+        elif HAS_SENTENCE_TRANSFORMERS:
+            print("  [INFO] Using SentenceTransformer")
+            self.model = SentenceTransformer(model_name)
+            self.fast_model = None
+        else:
+            raise ImportError("Neither fastembed nor sentence-transformers is installed.")
 
         click.echo(f"  [OK] Loaded index: {self.index.ntotal} chunks, {self.index.d} dimensions")
 
@@ -61,12 +82,17 @@ class Retriever:
         Returns:
             List of dicts with keys: chunk_id, text, page, score
         """
-        # Embed the query with the same model
-        query_embedding = self.model.encode(
-            [query],
-            normalize_embeddings=True,
-        )
-        query_embedding = np.array(query_embedding, dtype=np.float32)
+        if self.fast_model is not None:
+            # FastEmbed ONNX embedding (normalized 384-dim vector)
+            emb = list(self.fast_model.embed([query]))[0]
+            query_embedding = np.array([emb], dtype=np.float32)
+        else:
+            # SentenceTransformer embedding
+            query_embedding = self.model.encode(
+                [query],
+                normalize_embeddings=True,
+            )
+            query_embedding = np.array(query_embedding, dtype=np.float32)
 
         # Search FAISS index (inner product = cosine similarity for normalized vectors)
         scores, indices = self.index.search(query_embedding, top_k)
