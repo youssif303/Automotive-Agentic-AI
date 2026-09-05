@@ -135,33 +135,36 @@ class AutoBrainAgent:
                 return f"[Gemini Exception: {str(e)}]"
 
         # Provider 2: Groq (high-speed free tier, key starts with gsk_)
-        try:
-            url = "https://api.groq.com/openai/v1/chat/completions"
-            payload = {
-                "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": max_tokens,
-                "temperature": temperature
-            }
-            req = urllib.request.Request(
-                url,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "User-Agent": "Mozilla/5.0 AutoBrain"
-                },
-                data=json.dumps(payload).encode("utf-8")
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                res_data = json.loads(resp.read().decode("utf-8"))
-                return res_data["choices"][0]["message"]["content"].strip()
-        except urllib.error.HTTPError as e:
-            err_body = e.read().decode("utf-8")
-            print(f"  [Groq API Error] {e.code}: {err_body}")
-            return f"[Cloud LLM Error {e.code}: {err_body[:100]}]"
-        except Exception as e:
-            print(f"  [Cloud LLM Exception] {str(e)}")
-            return f"[Cloud LLM Exception: {str(e)}]"
+        for model_name in ["groq/compound-mini", "openai/gpt-oss-20b", "llama-3.1-8b-instant"]:
+            try:
+                url = "https://api.groq.com/openai/v1/chat/completions"
+                payload = {
+                    "model": model_name,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": max_tokens,
+                    "temperature": temperature
+                }
+                req = urllib.request.Request(
+                    url,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                        "User-Agent": "Mozilla/5.0 AutoBrain"
+                    },
+                    data=json.dumps(payload).encode("utf-8")
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    res_data = json.loads(resp.read().decode("utf-8"))
+                    return res_data["choices"][0]["message"]["content"].strip()
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8")
+                if "model_not_found" in err_body and model_name != "llama-3.1-8b-instant":
+                    continue  # Try next model in fallback list
+                print(f"  [Groq API Error] {e.code}: {err_body}")
+                return f"[Cloud LLM Error {e.code}: {err_body[:100]}]"
+            except Exception as e:
+                print(f"  [Cloud LLM Exception] {str(e)}")
+                return f"[Cloud LLM Exception: {str(e)}]"
 
     def _classify_intent(self, query: str) -> bool:
         """
