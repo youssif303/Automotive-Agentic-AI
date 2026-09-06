@@ -646,10 +646,21 @@ body {
         flex-shrink: 0;
     }
 
-    /* Hide upload zone on mobile */
-    .upload-zone,
-    .progress-container {
-        display: none;
+    /* Compact upload zone on mobile */
+    .upload-zone {
+        padding: 10px 8px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        min-width: 100px;
+    }
+
+    .upload-icon {
+        font-size: 20px;
+        margin-bottom: 4px;
+    }
+
+    .upload-text {
+        font-size: 10px;
     }
 
     .sidebar-footer {
