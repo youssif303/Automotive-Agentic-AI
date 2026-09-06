@@ -40,6 +40,27 @@ document.addEventListener("DOMContentLoaded", () => {
         inspectorBackdrop.classList.remove("open");
     }
 
+    // ---------------------------------------------------------------------------
+    // Mobile Sidebar Hamburger Menu
+    // ---------------------------------------------------------------------------
+    const sidebar = document.getElementById("sidebar");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+    const hamburgerBtn = document.getElementById("hamburgerBtn");
+    const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+    function openSidebar() {
+        sidebar.classList.add("open");
+        sidebarBackdrop.classList.add("open");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove("open");
+        sidebarBackdrop.classList.remove("open");
+    }
+
+    hamburgerBtn.addEventListener("click", openSidebar);
+    sidebarCloseBtn.addEventListener("click", closeSidebar);
+    sidebarBackdrop.addEventListener("click", closeSidebar);
 
     // ---------------------------------------------------------------------------
     // Helper: Format Index Folder Names
@@ -187,7 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span style="font-size:10px; opacity:0.5;">Active</span>
                 `;
                 
-                item.addEventListener("click", () => selectIndex(index));
+                item.addEventListener("click", () => { selectIndex(index); closeSidebar(); });
                 manualList.appendChild(item);
             });
         } catch (err) {

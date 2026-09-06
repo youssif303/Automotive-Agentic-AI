@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoBrain Lite — AI Vehicle Assistant</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,12 +13,14 @@
     <div class="app-container">
         
         <!-- Sidebar: Manual Selector & Uploader -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
                     <span class="logo-icon">🚗</span>
                     <span class="logo-text">AutoBrain <span class="accent-text">Lite</span></span>
                 </div>
+                <!-- Close button — mobile only -->
+                <button class="sidebar-close-btn" id="sidebarCloseBtn">&times;</button>
             </div>
             
             <div class="sidebar-content">
@@ -32,7 +34,7 @@
                 <div class="section-title">Upload Manual (PDF)</div>
                 <div class="upload-zone" id="uploadZone">
                     <div class="upload-icon">📁</div>
-                    <div class="upload-text">Drag & drop or click to upload</div>
+                    <div class="upload-text">Tap or click to upload a PDF manual</div>
                     
                     <!-- Progress bar (hidden by default) -->
                     <div class="progress-container" id="progressContainer">
@@ -50,11 +52,18 @@
                 </div>
             </div>
         </aside>
+
+        <!-- Mobile sidebar backdrop -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
         
         <!-- Chat Area -->
         <main class="chat-area">
             <!-- Chat Header -->
             <header class="chat-header">
+                <!-- Hamburger menu — mobile only -->
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
                 <div class="header-info">
                     <h1 id="activeManualTitle">No manual selected</h1>
                     <p class="subtitle" id="activeManualSubtitle">Local On-Premise AI RAG Assistant</p>
@@ -99,6 +108,6 @@
         </div>
         
     </div>
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>
