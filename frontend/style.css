@@ -507,6 +507,18 @@ body {
     font-size: 24px;
     cursor: pointer;
     line-height: 1;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.close-btn:hover,
+.close-btn:active {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-text-main);
 }
 
 .inspector-content {
@@ -534,4 +546,38 @@ body {
     font-size: 12px;
     margin-bottom: 8px;
     text-transform: uppercase;
+}
+
+/* Backdrop overlay — tapping it closes the drawer on mobile */
+.inspector-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 99;
+    cursor: pointer;
+}
+
+.inspector-backdrop.open {
+    display: block;
+}
+
+/* Mobile: drawer takes full screen width so it can't overflow */
+@media (max-width: 640px) {
+    .inspector-panel {
+        width: 100vw;
+        right: -100vw;
+    }
+
+    .inspector-panel.open {
+        right: 0;
+    }
+
+    /* Larger tap target for close button on touch screens */
+    .close-btn {
+        font-size: 28px;
+        min-width: 52px;
+        min-height: 52px;
+        color: var(--color-text-main);
+    }
 }

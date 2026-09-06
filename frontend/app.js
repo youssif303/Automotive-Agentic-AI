@@ -26,8 +26,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Inspector Panel Elements
     const inspectorPanel = document.getElementById("inspectorPanel");
+    const inspectorBackdrop = document.getElementById("inspectorBackdrop");
     const closeInspectorBtn = document.getElementById("closeInspectorBtn");
     const inspectorContent = document.getElementById("inspectorContent");
+
+    function openInspectorPanel() {
+        inspectorPanel.classList.add("open");
+        inspectorBackdrop.classList.add("open");
+    }
+
+    function closeInspectorPanel() {
+        inspectorPanel.classList.remove("open");
+        inspectorBackdrop.classList.remove("open");
+    }
+
 
     // ---------------------------------------------------------------------------
     // Helper: Format Index Folder Names
@@ -298,11 +310,15 @@ document.addEventListener("DOMContentLoaded", () => {
             inspectorContent.appendChild(card);
         });
 
-        inspectorPanel.classList.add("open");
+        openInspectorPanel();
     }
 
     closeInspectorBtn.addEventListener("click", () => {
-        inspectorPanel.classList.remove("open");
+        closeInspectorPanel();
+    });
+
+    inspectorBackdrop.addEventListener("click", () => {
+        closeInspectorPanel();
     });
 
     // ---------------------------------------------------------------------------
