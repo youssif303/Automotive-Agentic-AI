@@ -581,3 +581,134 @@ body {
         color: var(--color-text-main);
     }
 }
+
+/* ==========================================================================
+   Mobile Responsive Layout (phones <= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+
+    /* Switch from 2-column grid to vertical stack */
+    .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* Sidebar becomes a compact horizontal bar at the top */
+    .sidebar {
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-glass);
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 0;
+    }
+
+    .sidebar-header {
+        padding: 12px 16px;
+        border-bottom: none;
+        border-right: 1px solid var(--border-glass);
+    }
+
+    .logo {
+        font-size: 16px;
+        gap: 8px;
+    }
+
+    /* Sidebar content scrolls horizontally on mobile */
+    .sidebar-content {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 8px 12px;
+        gap: 10px;
+        flex: 1;
+        align-items: center;
+    }
+
+    .section-title {
+        display: none;
+    }
+
+    /* Manual list goes horizontal */
+    .manual-list {
+        flex-direction: row;
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .manual-item {
+        font-size: 12px;
+        padding: 6px 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Hide upload zone on mobile */
+    .upload-zone,
+    .progress-container {
+        display: none;
+    }
+
+    .sidebar-footer {
+        padding: 8px 12px;
+        border-top: none;
+        border-left: 1px solid var(--border-glass);
+    }
+
+    /* Chat area fills remaining screen */
+    .chat-area {
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-header {
+        padding: 10px 16px;
+        flex-shrink: 0;
+    }
+
+    .chat-header h1 {
+        font-size: 15px;
+    }
+
+    .subtitle {
+        font-size: 11px;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+    }
+
+    .message-bubble {
+        max-width: 95%;
+        font-size: 14px;
+    }
+
+    .chat-input-area {
+        padding: 10px 12px;
+        flex-shrink: 0;
+    }
+
+    /* Inspector panel: fixed full-screen overlay on mobile */
+    .inspector-panel {
+        width: 100vw;
+        right: -100vw;
+        position: fixed;
+        z-index: 200;
+    }
+
+    .inspector-panel.open {
+        right: 0;
+    }
+
+    .inspector-backdrop {
+        position: fixed;
+        z-index: 199;
+    }
+}
